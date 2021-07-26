@@ -2,14 +2,16 @@ const FormData = require('form-data');
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const streamBuffers = require('stream-buffers');
-const { Readable } = require('stream');
 const app = express();
 
 const multer = require('multer');
 const upload = multer();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: '*',
+  })
+);
 
 app.post(`/token`, async (req, res) => {
   try {
@@ -25,7 +27,7 @@ app.post(`/token`, async (req, res) => {
   }
 });
 
-app.post(`/upload`, upload.any(), cors(), async (req, res) => {
+app.post(`/upload`, upload.any(), async (req, res) => {
   try {
     const formData = new FormData();
     console.log(Buffer.from(req.files[0].buffer));
