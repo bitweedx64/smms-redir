@@ -2,7 +2,8 @@ const FormData = require('form-data');
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const cloudscraper = require('cloudscraper');
+const streamBuffers = require('stream-buffers');
+const { Readable } = require('stream');
 const app = express();
 
 const multer = require('multer');
@@ -13,9 +14,7 @@ app.use(cors());
 app.post(`/token`, async (req, res) => {
   try {
     const query = req.query;
-    console.log('GOTOKEN!!!!', query);
     const response = await axios.post(`https://sm.ms/api/v2/token?username=${query.username}&password=${query.password}`);
-    console.log(response.data);
     res.send(response.body);
   } catch (error) {
     console.error(error);
@@ -26,23 +25,17 @@ app.post(`/token`, async (req, res) => {
   }
 });
 
-app.post(`/upload`, upload.single('smfile'), async (req, res) => {
+app.post(`/upload`, upload.any(), cors(), async (req, res) => {
   try {
-    const data = req.body;
     const formData = new FormData();
-    formData.append('smfile', req.file.buffer, { filename: req.file.filename });
-    formData.append('format', data.format);
+    console.log(Buffer.from(req.files[0].buffer));
+    formData.append('smfile', Buffer.from(req.files[0].buffer), req.files[0].originalname);
+    formData.append('format', 'json');
     const headers = formData.getHeaders();
-    headers.Authorization = req.headers.authorization;
-    headers.boundary = '__X_PAW_BOUNDARY__';
-    headers['User-Agent'] = 'paw/1.0';
-
-    const response = await cloudscraper.post({
-      url: 'https://sm.ms/api/v2/upload',
-      formData: {
-        smfile: req.file.buffer,
-        format: req.body.format,
-      },
+    headers['Authorization'] = req.headers.authorization;
+    headers['Cookie'] = 'PHPSESSID=2fl4qf6irr7a91epogjerjh1bv';
+    // headers["Content-Type"] = "multipart/form-data; charset=utf-8; boundary=__X_PAW_BOUNDARY__";
+    const response = await axios.post('https://sm.ms/api/v2/upload', formData, {
       headers,
     });
     console.log(response.data);
